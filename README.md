@@ -8,8 +8,6 @@
 
 ### Genealogy of HA and NA
 Analyses/genealogy
-- `sample_sequences_for_genealogy.py` downsamples HA and NA sequences and saves the sampled sequences as “*.fasta” files. 
-- `write_meta.py` takes sampled sequences for genealogy and assign them to clades, save files as  “*_clade.csv”. 
 - `tree_201718_shaded.R` makes plots of HA genealogy for season 16-17 and 17-18.
 - `na_tree_201718_shaded.R` makes plots of NA genealogy for season 16-17 and 17-18.
 
@@ -23,7 +21,6 @@ Analyses/forecasting/src
 
 ### Frequency and age distribution of clades
 Analyses/frequency/src
-- `write_age_and_allele.py` takes sequences and meta data and assign sequences to clades. Uses `age_distribution_by_clade_functions.py` and `define_virus.py` and make “*_clade_assigned_season_*.csv” files.
 - `make_plot_frequency.R` takes “*_clade_assigned_season_*.csv” files and makes plots of frequencies by clade.
 - `difference_in_proportion_test.R` performs chi-square test to test the difference in the proportion of 3C.2A2 between children and adults.
 
