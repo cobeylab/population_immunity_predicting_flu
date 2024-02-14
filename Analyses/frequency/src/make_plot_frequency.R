@@ -65,6 +65,9 @@ tb = rbind(freq_NE_16, freq_NE_17,
 
 tb$region = factor(tb$region, levels = c("North America", "United States", "Northeastern US"))
 
+# Export to result folder
+write.csv(tb, "../result/clade_frequencies.csv", row.names = F)
+
 ##################################################
 # plot frequency and population susceptibility
 

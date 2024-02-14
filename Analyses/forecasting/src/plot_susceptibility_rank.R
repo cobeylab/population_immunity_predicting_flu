@@ -20,13 +20,15 @@
 ##########################################################################
 
 library(ggplot2)
+library(dplyr)
+library(tidyr)
 library(ggpubr)
 
 fig_dir = "../fig/"
 
 main = 1 #main = 1: figure going to main text
 opt_na=0
-threshold = 3
+threshold = 2
 
 if(opt_na == 0){
   opt = "df_susc"
@@ -211,9 +213,64 @@ if(opt_na == 0) {
 
 if (main == 1) {
   
+  # Read clade frequency data
+  clade_frequencies <- as_tibble(read.csv("../../frequency/result/clade_frequencies.csv", header = T))
+  
+  # Ajust clade names so they match susceptibility object
+  clade_frequencies <- clade_frequencies %>%
+    mutate(Clade = case_when(
+      clade == 'c3a' ~ '3C3.A',
+      clade == 'c2a' ~ '3C2.A',
+      clade == 'A1' ~ 'N171K',
+      clade == 'A1_2' ~ 'N121K_N171K',
+      clade == 'A1_3' ~ 'N121K_T135K_N171K',
+      clade == 'A2' ~ 'T131K_R142K',
+      clade == 'A2_2' ~ 'T131K_R142K_R261Q',
+      clade == 'A3' ~ 'N121K_S144K'
+    )) %>%
+    select(-clade) %>%
+    select(Clade, everything())
+  
+  # Get frequency changes in the North America, put them in  in wide format
+  clade_frequencies <- clade_frequencies %>%
+    filter(region == "North America") %>%
+    select(Clade, freq, season) %>%
+    pivot_wider(names_from = season, values_from = freq, names_prefix = 'freq_') %>%
+    replace_na(list(`freq_2017-18` = 0))
+  
+  # Add frequencies to pop. level susceptibility plot
+  p_all <- p_all +
+    #geom_point(data = clade_frequencies, aes(x = Clade, y = `freq_2016-17`),
+    #           size = 1, color = 'grey70') +
+    geom_segment(data = clade_frequencies,
+                 aes(x = Clade, xend = Clade,
+                     y = `freq_2016-17`, yend = `freq_2017-18`),
+                 arrow = arrow(length = unit(4, "pt"), type = 'closed'),
+                 color = 'grey70', linewidth = 0.5)
+  
+  # A legend for the frequency arrows
+  arrow_legend <- ggplot() +
+    susc_theme +
+    # Adding a built-in legend for the frequency arrow
+    #geom_point(aes(x = -0.2, y = 0.9), 
+    #           size = 1, color = 'grey70') +
+    geom_segment(aes(x = -0.2, xend = -0.2, 
+                     y = 0.9, yend = 1),
+                 arrow = arrow(length = unit(4, "pt"), type = 'closed'),
+                 color = 'grey70', linewidth = 0.5, alpha = 0.9) +
+    xlim(c(-0.5,0.5)) +
+    ylim(c(0.89,1.01)) +
+    geom_text(aes(x = -0.15, y = 0.95, label = 'Change in frequency\nfrom 16/17 to 17/18'),
+              hjust = 0, color = 'grey60', size = 2.5) +
+    theme(panel.border = element_blank(), axis.line = element_blank(),
+          axis.text = element_blank(), axis.ticks = element_blank(),
+          axis.title = element_blank(), axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          plot.margin = margin())
+  
   p_obs_titer = p_obs_titer + theme(plot.margin = unit(c(0.2, 4, 1, 4), "lines"))
   
-  p_all = p_all + theme(plot.margin = unit(c(0.2, 0.6, 0.2, 0.1), "lines"),
+  p_all = p_all + theme(plot.margin = unit(c(0, 0.6, 0.2, 0.1), "lines"),
                         legend.position = "none")
   
   
@@ -221,9 +278,12 @@ if (main == 1) {
   
   
   ggarrange( p_obs_titer,
-             ggarrange( p_all, p_ag,
+             ggarrange( ggarrange(arrow_legend, p_all, nrow = 2, heights = c(1.4,10)),
+                        
+                        
+                        p_ag,
                         ncol = 2, nrow = 1, widths=c(17,30), heights=c(10,8),
-                        labels = c("B"), label.y = 1.15),
+                        labels = c("B"), label.y = 1.1),
              nrow=2,
              labels = "A"
   )
