@@ -1,5 +1,7 @@
 # population_immunity_predicting_flu
 
+Kangchon Kim contributed most of the code. Marcos Vieira contributed changes during revisions.
+
 ## Data
 - Data/sera/data contains HA and NA titers
 - Data/sequences/data contains HA and NA reference virus sequences
