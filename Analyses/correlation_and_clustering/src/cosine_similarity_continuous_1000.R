@@ -138,7 +138,7 @@ for (r in 1:n_replicate_pairings) {
                                                                      1, 20),
                                                                base = 2)
                     
-                     tibble(cosine_sim = cosine(titer1, titer2)[1] - null_cosine_sim,
+                     tibble(cosine_sim = (cosine(titer1, titer2)[1] - null_cosine_sim) / (1 - null_cosine_sim),
                             # Note that Spearman correlation will be NA if an individual has the same titer to all viruses
                             spearman_cor = cor.test(titer1, titer2, method = 'spearman')$estimate)
                     }, simplify = F
@@ -151,7 +151,7 @@ for (r in 1:n_replicate_pairings) {
           spearman_cor <- mean_stats_across_imputations$spearman_cor
             
         }else{
-          cosine_similarity <- cosine(titer1, titer2) - null_cosine_sim
+          cosine_similarity <- (cosine(titer1, titer2) - null_cosine_sim)/(1 - null_cosine_sim)
           spearman_cor <- cor.test(titer1, titer2, method = 'spearman')$estimate
         }
         
