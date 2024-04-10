@@ -1,7 +1,10 @@
 library(ggplot2)
+library(cowplot)
 library(dplyr)
+library(tidyr)
 library(reshape2)
 library(lsa)
+library(stringr)
 
 #read titer data
 source("../../../Data/script/load_data/load_data.R")
@@ -22,20 +25,61 @@ cosine_theme = theme_bw() + theme(
 
 ################################################################
 
+
+impute_continuous_titers <- function(log2_titer){
+  original_titer <- 2^log2_titer
+  
+  # For any titers coded as 1:10, recode as 1:1
+  original_titer[abs(original_titer) - 10 < 1e-5] <- 1
+  
+  # Sample continuous value between original titer and next dilution
+  # (Next dilution is 20 if original titer coded as 1:1, *2 otherwise)
+  next_dilutions <- original_titer*ifelse(original_titer ==1, 20, 2)
+  
+  continuous_titers <- runif(length(original_titer),
+                             min = original_titer, max = next_dilutions)
+  
+  return(log(continuous_titers, base = 2))
+  
+  
+  
+  # tibble(original_titer = 2^log2_titer) %>%
+  #   # For any titers coded as 1:10, recode as 1:1
+  #   mutate(recoded_titer = case_when(
+  #     abs(original_titer - 10) < 1e-5 ~ 1,
+  #     T ~ original_titer
+  #   )) %>%
+  #   mutate(next_dilution = case_when(
+  #     recoded_titer == 1 ~ 20,
+  #     recoded_titer !=1 ~ recoded_titer*2
+  #   )) %>%
+  #   rowwise() %>%
+  #   mutate(continuous_titer = runif(1, min = recoded_titer, max = next_dilution),
+  #          continuous_log2_titer = log(continuous_titer, base = 2)) %>%
+  #   pull(continuous_log2_titer)
+}
+
+
+
 # First, estimate expected Cosine similarity of 8-dimensional vectors
 # with elements uniformly drawn from discrete set of existing dilutions
 null_cosine_sim <- replicate(100000,
                              {
+                               # Randomly sample titer from the observed dilutions
                                x <- 2^sample(0:9, size = 8, replace = T)*10
                                y <- 2^sample(0:9, size = 8, replace = T)*10
                                
-                               cosine(log(x, base = 2),
-                                      log(y, base = 2))
+                               # Randomly impute continue titer values
+                               imputed_log2_x <- impute_continuous_titers(log(x, base= 2))
+                               imputed_log2_y <- impute_continuous_titers(log(y, base =2))
+                               
+                               cosine(imputed_log2_x,
+                                      imputed_log2_y)
                              }
 ) %>% mean()
 # ==== MV: Generalizing some previous code by KK
 plot_similarity_vs_age_single_pairing <- function(ages, similarities){
-  p_one = ggplot(df, aes(x=ages, y=similarities)) +
+  p_one = ggplot(single_pairing_similarity_df, aes(x=ages, y=similarities)) +
     geom_point() +
     geom_smooth(method = "lm", col="brown1", alpha=0) +
     cosine_theme +
@@ -64,6 +108,72 @@ plot_similarity_vs_age_replicate_pairings <- function(predicts){
 }
 # ====
 
+plot_pairs <- function(single_pairing_similarity_df, sera, pairs){
+  
+  long_form_serum_data <- as_tibble(sera) %>%
+    pivot_longer(cols = !any_of(c('Sample_ID', 'Age')),
+                 names_to = 'clade', values_to = 'log2_of_titer_by_10') %>%
+    # Compute log2 titer without the division by 10
+    mutate(log2_titer = log(2^log2_of_titer_by_10*10, base = 2))
+  
+  unique_values <- unique(long_form_serum_data$log2_titer)
+
+  wide_format_pairs <-
+    lapply(as.list(pairs),
+         FUN = function(pair){
+           
+           pair_label <- single_pairing_similarity_df %>%
+             filter(pairs == pair) %>%
+             mutate(label = paste0(pairs, "\n",
+                                   'Mean age = ', ages, "\n",
+                                   'Cosine sim. = ', round(cosine_similarities,3), "\n",
+                                   'Spearman cor = ', round(spearman_correlations, 3))) %>%
+             pull(label)
+           
+           pair <- str_split(pair, ';')[[1]]
+           
+           long_form_serum_data %>%
+             filter(Sample_ID %in% pair) %>%
+             select(clade, Sample_ID, log2_titer) %>%
+             pivot_wider(names_from = Sample_ID, values_from = log2_titer) %>%
+             rename_with(.cols = all_of(pair), .fn = function(x){paste0('person_',which(pair == x))}) %>%
+             mutate(pair = paste0(pair, collapse = ';'),
+                    pair_label = pair_label) %>%
+             select(pair, everything()) %>%
+             # For each point in scatterplot, make size a functioin of how many values are at that point
+             mutate(position = paste(person_1, person_2, sep = ',')) %>%
+             group_by(position) %>%
+             mutate(point_color = n()) %>%
+             ungroup() %>%
+             select(-position)
+         }
+         
+         ) %>%
+    bind_rows()
+  
+  wide_format_pairs %>%
+    # Adding some jitter manually
+    ggplot(aes(x = person_1, y = person_2)) +
+    geom_point(shape = 21, size = 3, aes(fill = factor(point_color))) +
+    geom_text(aes(label = point_color, color = point_color < 5), size = 2) +
+    scale_x_continuous(breaks = unique_values, limits = c(range(unique_values)),
+                       labels = ~ 2^(.x) ) +
+    scale_y_continuous(breaks = unique_values, limits = c(range(unique_values)),
+                       labels = ~ 2^(.x) ) +
+    facet_wrap('pair_label') +
+    theme_cowplot() +
+    theme(axis.text.x = element_text(angle = -90, vjust = 0, size = 9),
+          axis.text.y = element_text(size = 9),
+          strip.text = element_text(size = 9),
+          axis.title = element_text(size = 9),
+          legend.position = 'none') +
+    xlab('Person 1') +
+    ylab('Person 2') +
+    scale_fill_brewer(name = 'n values') +
+    scale_color_manual(values = c('white','black'))
+  
+}
+
 # Remove individuals with all-undetectable titers. Remove individuals with NA
 
 sera = sera[rowSums(is.na(sera))==0, ]
@@ -90,6 +200,7 @@ for (r in 1:n_replicate_pairings) {
   cosine_similarities = c()
   spearman_correlations <- c()
   ages = c()
+  pairs <- c()
   IDs = sera$Sample_ID
   
   # Pair individuals of similar age, compute cosine similarity, Spearman correlation
@@ -122,52 +233,40 @@ for (r in 1:n_replicate_pairings) {
         titer1 <- log(2^titer1*10, base = 2)
         titer2 <- log(2^titer2*10, base = 2)
         
-        #If any values are at the limit of detection (i.e., originally coded as 10)
-        if(any(titer1 == log(10, base = 2)) | any(titer2 == log(10, base = 2))){
-          # For any titers coded as 10 (LOD), impute a random uniform value between 1-20
-          # Do this n_replicate_imputations times for this pair of people, compute mean cosine similarity
-
-          replicate(n = n_replicate_imputations,
-                    {
-                    # For any titers coded as 10 (LOD), impute a random uniform value between 1-20
-                    titer1[titer1 == log(10, base = 2)] <- log(runif(n = length(titer1[titer1 == log(10, base = 2)]),
-                                                                     1, 20),
-                                                               base = 2)
-
-                    titer2[titer2 == log(10, base = 2)] <- log(runif(n = length(titer2[titer2 == log(10, base = 2)]),
-                                                                     1, 20),
-                                                               base = 2)
+        # Randomly impute continuous titer values
+        replicate(n = n_replicate_imputations,
+                  {
+                    continuous_titers1 <- impute_continuous_titers(titer1)
+                    continuous_titers2 <- impute_continuous_titers(titer2)
                     
-                     tibble(cosine_sim = (cosine(titer1, titer2)[1] - null_cosine_sim) / (1 - null_cosine_sim),
-                            # Note that Spearman correlation will be NA if an individual has the same titer to all viruses
-                            spearman_cor = cor.test(titer1, titer2, method = 'spearman')$estimate)
-                    }, simplify = F
-
-          ) %>%
-            bind_rows() %>% 
-            summarise(across(everything(), mean)) -> mean_stats_across_imputations
-          
-          cosine_similarity <- mean_stats_across_imputations$cosine_sim
-          spearman_cor <- mean_stats_across_imputations$spearman_cor
+                    tibble(cosine_sim = (cosine(continuous_titers1,  continuous_titers2)[1] - null_cosine_sim) / (1 - null_cosine_sim),
+                           # Note that Spearman correlation will be NA if an individual has the same titer to all viruses
+                           spearman_cor = cor.test(continuous_titers1,  continuous_titers2, method = 'spearman')$estimate)
+                  }, simplify = F
+                  
+        ) %>%
+          bind_rows() %>% 
+          summarise(across(everything(), mean)) -> mean_stats_across_imputations
+        
+      
+        cosine_similarity <- mean_stats_across_imputations$cosine_sim
+        spearman_cor <- mean_stats_across_imputations$spearman_cor
             
-        }else{
-          cosine_similarity <- (cosine(titer1, titer2) - null_cosine_sim)/(1 - null_cosine_sim)
-          spearman_cor <- cor.test(titer1, titer2, method = 'spearman')$estimate
-        }
         
         age = (indiv1_age + indiv2_age)/2
         cosine_similarities = c(cosine_similarities, cosine_similarity)
         spearman_correlations <- c(spearman_correlations, spearman_cor)
         ages = c(ages, age)
+        pairs <- c(pairs, paste0(indiv1, ';', indiv2))
       },silent=T
     )
     
   }
 
-  df = data.frame(cosine_similarities, spearman_correlations, ages)
+  single_pairing_similarity_df = tibble(cosine_similarities, spearman_correlations, ages, pairs)
   
-  cosine_vs_age_model = lm(cosine_similarities ~ ages, data=df)
-  cor_vs_age_model = lm(spearman_correlations ~ ages, data=df)
+  cosine_vs_age_model = lm(cosine_similarities ~ ages, data=single_pairing_similarity_df)
+  cor_vs_age_model = lm(spearman_correlations ~ ages, data=single_pairing_similarity_df)
   
   cosine_predicts <- cbind(cosine_predicts,
                            predict(cosine_vs_age_model, newdata = data.frame(ages = xseq),
@@ -190,7 +289,7 @@ saveRDS(cosine_predicts, "../result/cosine_predicts_lm_no_replacement_1000_age_w
 
 
 #One example of cosine similarity vs age (single pairing)
-saveRDS(df, "../result/cosine_similarity_lm_one_example_age_window_3.rds")
+saveRDS(single_pairing_similarity_df, "../result/cosine_similarity_lm_one_example_age_window_3.rds")
 
 plot_similarity_vs_age_single_pairing(ages = ages, similarities = cosine_similarities) +
   ylab("Normalized cosine similarity")
@@ -202,7 +301,7 @@ write.csv(data.frame(unlist(summary(cosine_vs_age_model)$coefficients)),
 
 #One example of cosine similarity vs age (single pairing)
 plot_similarity_vs_age_single_pairing(ages = ages, similarities = spearman_correlations) +
-  ylab("Spearman correlation")
+  ylab("Spearman correlation") + ylim(-1,1)
 ggsave("../figure/spearman_cor_lm_one_example_age_window_3.png", height=2.7, width=4.5)
 ggsave("../figure/spearman_cor_lm_one_example_age_window_3.pdf", height=2.7, width=4.5)
 
@@ -212,14 +311,33 @@ write.csv(data.frame(unlist(summary(cor_vs_age_model)$coefficients)),
 # Cosine similarity vs age: mean relationship across replicate pairings
 
 plot_similarity_vs_age_replicate_pairings(predicts = cosine_predicts) +
-  ylab('Normalized cosine similarity')
+  ylab('Normalized cosine similarity') +
+  ylim(0,1)
 ggsave("../figure/cosine_similarity_lm_1000_age_window_3.png", height=2.7, width=4.5)
 ggsave("../figure/cosine_similarity_lm_1000_age_window_3.pdf", height=2.7, width=4.5)
 
 plot_similarity_vs_age_replicate_pairings(predicts = cor_predicts) +
-  ylab('Spearman correlation')
+  ylab('Spearman correlation') +
+  ylim(-1,1)
 ggsave("../figure/spearman_cor_lm_1000_age_window_3.png", height=2.7, width=4.5)
 ggsave("../figure/spearman_cor_lm_1000_age_window_3.pdf", height=2.7, width=4.5)
 
+# For a single random pairing (the last in the loop), make scatterplots for some pairs
 
+# 12 pairs with the highest cosine similarity
+plot_pairs(single_pairing_similarity_df, sera = sera,
+           pairs = single_pairing_similarity_df %>%
+             arrange(desc(cosine_similarities)) %>%
+             slice(1:12) %>% pull(pairs)
+) +
+  ggtitle("12 pairs with the highest cosine similarity")
 
+# 12 pairs with the lowest cosine similarity
+plot_pairs(single_pairing_similarity_df, sera = sera,
+           pairs = single_pairing_similarity_df %>%
+             arrange(cosine_similarities) %>%
+             slice(1:12) %>% pull(pairs)
+) +
+  ggtitle("12 pairs with the lowest cosine-similarity")
+
+plot_pairs(single_pairing_similarity_df, sera = sera, pairs = '17-165;17-155')
