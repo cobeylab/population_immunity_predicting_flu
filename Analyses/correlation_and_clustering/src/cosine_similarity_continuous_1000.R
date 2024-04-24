@@ -151,8 +151,7 @@ plot_pairs <- function(single_pairing_similarity_df, sera, pairs){
          ) %>%
     bind_rows()
   
-  wide_format_pairs %>%
-    # Adding some jitter manually
+  scatterplot <- wide_format_pairs %>%
     ggplot(aes(x = person_1, y = person_2)) +
     geom_point(shape = 21, size = 3, aes(fill = factor(point_color))) +
     geom_text(aes(label = point_color, color = point_color < 5), size = 2) +
@@ -172,6 +171,48 @@ plot_pairs <- function(single_pairing_similarity_df, sera, pairs){
     scale_fill_brewer(name = 'n values') +
     scale_color_manual(values = c('white','black'))
   
+  long_format_pairs <- wide_format_pairs %>%
+    clade_relabeller() %>%
+    select(pair, clade, pair_label, matches('person')) %>%
+    pivot_longer(cols = matches('person'), names_to = 'person', values_to = "log2_titer")
+    
+  
+  
+  landscape_plot <- long_format_pairs %>%
+    ggplot(aes(x = clade, y = log2_titer, color = person, group = person)) + 
+    geom_point() +
+    geom_line() +
+    theme_cowplot() +
+    facet_wrap('pair_label') +
+    scale_y_continuous(breaks = unique_values, limits = c(range(unique_values)),
+                       labels = ~ 2^(.x) )  +
+    scale_x_discrete(labels = function(x){str_remove(x,'3C\\.')}) +
+    theme(axis.text.x = element_text(angle = -45, hjust = 0, vjust = 0.5, size = 10),
+          legend.position = 'none') +
+    xlab('Clade') +
+    ylab('Titer')
+  
+  return(list(scatterplot = scatterplot, landscape_plot = landscape_plot))
+  
+  
+}
+
+clade_relabeller <- function(data){
+  data %>%
+    mutate(clade = case_when(
+      clade == '3C3.A' ~ '3C.3A',
+      clade == '3C2.A' ~ '3C.2A',
+      clade == 'N171K' ~ '3C.2A1-1',
+      clade == 'N121K_N171K'~ '3C.2A1-2',
+      clade == 'N121K_T135K_N171K' ~ '3C.2A1-3',
+      clade == 'T131K_R142K'~ '3C.2A2-1',
+      clade == 'T131K_R142K_R261Q' ~ '3C.2A2-2',
+      clade == 'N121K_S144K' ~ '3C.2A3'
+    )) %>%
+    mutate(clade = factor(
+      clade,
+      levels = c('3C.3A', '3C.2A','3C.2A1-1', '3C.2A1-2','3C.2A1-3','3C.2A2-1',
+                 '3C.2A2-2','3C.2A3')))
 }
 
 # Remove individuals with all-undetectable titers. Remove individuals with NA
@@ -193,7 +234,7 @@ cor_predicts = data.frame(xseq)
 n_replicate_pairings <- 1000
 
 # When people have values at LOD, perform this many imputations
-n_replicate_imputations <- 1000
+n_replicate_imputations <- 100
 
 
 for (r in 1:n_replicate_pairings) {
@@ -325,19 +366,43 @@ ggsave("../figure/spearman_cor_lm_1000_age_window_3.pdf", height=2.7, width=4.5)
 # For a single random pairing (the last in the loop), make scatterplots for some pairs
 
 # 12 pairs with the highest cosine similarity
-plot_pairs(single_pairing_similarity_df, sera = sera,
+top_12_cosine_sim <- plot_pairs(single_pairing_similarity_df, sera = sera,
            pairs = single_pairing_similarity_df %>%
              arrange(desc(cosine_similarities)) %>%
              slice(1:12) %>% pull(pairs)
-) +
-  ggtitle("12 pairs with the highest cosine similarity")
+)
+
+top_12_cosine_sim$scatterplot + ggtitle("12 pairs with the highest cosine similarity")
+top_12_cosine_sim$landscape_plot + ggtitle("12 pairs with the highest cosine similarity")
 
 # 12 pairs with the lowest cosine similarity
-plot_pairs(single_pairing_similarity_df, sera = sera,
+bottom_12_cosine_sim <- plot_pairs(single_pairing_similarity_df, sera = sera,
            pairs = single_pairing_similarity_df %>%
              arrange(cosine_similarities) %>%
              slice(1:12) %>% pull(pairs)
-) +
-  ggtitle("12 pairs with the lowest cosine-similarity")
+)
 
-plot_pairs(single_pairing_similarity_df, sera = sera, pairs = '17-165;17-155')
+bottom_12_cosine_sim$scatterplot + ggtitle("12 pairs with the lowest cosine-similarity")
+bottom_12_cosine_sim$landscape_plot + ggtitle("12 pairs with the lowest cosine-similarity")
+
+# 12 pairs with the highest Spearman cor
+top_12_spearman_cor <- plot_pairs(single_pairing_similarity_df, sera = sera,
+                                pairs = single_pairing_similarity_df %>%
+                                  arrange(desc(spearman_correlations)) %>%
+                                  slice(1:12) %>% pull(pairs)
+)
+
+top_12_spearman_cor$scatterplot +  ggtitle("12 pairs with the highest Spearman correlation") 
+top_12_spearman_cor$landscape_plot +  ggtitle("12 pairs with the highest Spearman correlation") 
+
+# 12 pairs with the lowest Spearman cor
+
+bottom_12_spearman_cor <- plot_pairs(single_pairing_similarity_df, sera = sera,
+                                  pairs = single_pairing_similarity_df %>%
+                                    arrange((spearman_correlations)) %>%
+                                    slice(1:12) %>% pull(pairs)
+)
+
+bottom_12_spearman_cor$scatterplot +  ggtitle("12 pairs with the lowest Spearman correlation") 
+bottom_12_spearman_cor$landscape_plot +  ggtitle("12 pairs with the lowest Spearman correlation") 
+
