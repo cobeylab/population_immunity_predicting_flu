@@ -242,6 +242,7 @@ for (r in 1:n_replicate_pairings) {
   spearman_correlations <- c()
   ages = c()
   pairs <- c()
+  n_values_below_LOD <- c() # Number of values below LOD across both people in the pair 
   IDs = sera$Sample_ID
   
   # Pair individuals of similar age, compute cosine similarity, Spearman correlation
@@ -274,6 +275,10 @@ for (r in 1:n_replicate_pairings) {
         titer1 <- log(2^titer1*10, base = 2)
         titer2 <- log(2^titer2*10, base = 2)
         
+        n_values_below_LOD <- c(n_values_below_LOD,
+                          sum(round(2^titer1) == 10) +
+                            sum(round(2^titer2) == 10))
+        
         # Randomly impute continuous titer values
         replicate(n = n_replicate_imputations,
                   {
@@ -304,7 +309,7 @@ for (r in 1:n_replicate_pairings) {
     
   }
 
-  single_pairing_similarity_df = tibble(cosine_similarities, spearman_correlations, ages, pairs)
+  single_pairing_similarity_df = tibble(cosine_similarities, spearman_correlations, ages, pairs, n_values_below_LOD)
   
   cosine_vs_age_model = lm(cosine_similarities ~ ages, data=single_pairing_similarity_df)
   cor_vs_age_model = lm(spearman_correlations ~ ages, data=single_pairing_similarity_df)
@@ -406,3 +411,53 @@ bottom_12_spearman_cor <- plot_pairs(single_pairing_similarity_df, sera = sera,
 bottom_12_spearman_cor$scatterplot +  ggtitle("12 pairs with the lowest Spearman correlation") 
 bottom_12_spearman_cor$landscape_plot +  ggtitle("12 pairs with the lowest Spearman correlation") 
 
+
+# Plotting cosine similarity as a function of n values below LOD
+single_pairing_similarity_df %>%
+  ggplot(aes(x = n_values_below_LOD, y = cosine_similarities)) + 
+  geom_point() +
+  theme_cowplot() +
+  xlab('Number of values below the LOD across both people') +
+  ylab('Cosine similarity\n(normalized, with random imputations)')
+
+
+# Linear model linking cosine similarity to spearman correlation
+cossim_vs_spearman <- lm(cosine_similarities ~ spearman_correlations,
+                         data = single_pairing_similarity_df)
+
+single_pairing_similarity_df <- single_pairing_similarity_df %>% 
+  mutate(residual = cossim_vs_spearman$residuals,
+         rank_abs_residual = rank(abs(residual))) %>%
+  mutate(selected = case_when(
+    rank_abs_residual <= 12 | (rank_abs_residual >= (max(rank_abs_residual) - 12 + 1)) ~ T,
+    T ~ F
+  ))
+
+
+# Plotting cosine similarity vs spearman correlation
+single_pairing_similarity_df  %>%
+  ggplot(aes(x = spearman_correlations, y = cosine_similarities)) + 
+  theme_cowplot() +
+  geom_point(aes(color = selected)) +
+  xlab('Spearman correlation') +
+  ylab('Cosine similarity') +
+  geom_smooth(method = 'lm', color = 'black') +
+  theme(legend.position = 'none') +
+  scale_color_manual(values = c('black','red'))
+
+
+# Plot the pairs with the greatest absolute residuals
+plot_pairs(single_pairing_similarity_df, sera = sera,
+           pairs = single_pairing_similarity_df %>%
+             filter(selected) %>%
+             arrange(desc(residual)) %>%
+             slice(1:12) %>%
+             pull(pairs))
+
+# Plots with the smallest absolute residuals
+plot_pairs(single_pairing_similarity_df, sera = sera,
+           pairs = single_pairing_similarity_df %>%
+             filter(selected) %>%
+             arrange(residual) %>%
+             slice(1:12) %>%
+             pull(pairs))
