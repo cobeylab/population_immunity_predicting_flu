@@ -92,10 +92,8 @@ ggplot(melt_3c, aes(x=X3C3.A, y=value)) +
   scale_y_continuous(breaks=c(0,1,2,3,4,5,6,7,8,9,10), limits=c(0,10),
                      labels=c(10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240)) +
   xlab("3C.3A titer") + ylab("Titer") +
-  cor_theme +
-  geom_smooth(method = "lm", se=FALSE) +
-  stat_regline_equation(label.y=10, label.x=5, aes(label = ..eq.label..), size=2) +
-  stat_regline_equation(label.y=9, label.x=5, aes(label = ..rr.label..), size=2)
+  stat_cor(aes(label = ..r.label..), method = 'spearman', cor.coef.name = 'rho') +
+  cor_theme 
 
 ggsave("../figure/3c3a_titers_x_other_titers_all_age_groups.png", height=5.5, width=5)
 ggsave("../figure/3c3a_titers_x_other_titers_all_age_groups.pdf", height=5.5, width=5)
@@ -130,11 +128,9 @@ ggplot(melt_a11_4590, aes(x=N171K, y=value)) +
                      labels=c(10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240)) +
   scale_y_continuous(breaks=c(0,1,2,3,4,5,6,7,8,9,10), limits=c(0,10),
                      labels=c(10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240)) +
-  geom_smooth(method = "lm", se=FALSE) +
-  stat_regline_equation(label.y=10, label.x=5, aes(label = ..eq.label..), size=2) +
-  stat_regline_equation(label.y=9, label.x=5, aes(label = ..rr.label..), size=2) +
   xlab("3C.2A1-1 titer") + ylab("Titer") +
-  cor_theme
+  stat_cor(aes(label = ..r.label..), method = 'spearman', cor.coef.name = 'rho') +
+  cor_theme 
 
 
 ggsave("../figure/A1-1_titers_x_other_titers_4590.png", height=5.5, width=5)
@@ -165,12 +161,9 @@ ggplot(melt_a12_4590, aes(x=N121K_N171K, y=value)) +
                      labels=c(10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240)) +
   scale_y_continuous(breaks=c(0,1,2,3,4,5,6,7,8,9,10), limits=c(0,10),
                      labels=c(10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240)) +
-  geom_smooth(method = "lm", se=FALSE) +
-  stat_regline_equation(label.y=10, label.x=5, aes(label = ..eq.label..), size=2) +
-  stat_regline_equation(label.y=9, label.x=5, aes(label = ..rr.label..), size=2) +
-  
   xlab("3C.2A1-2 titer") + ylab("Titer") +
-  cor_theme
+  stat_cor(aes(label = ..r.label..), method = 'spearman', cor.coef.name = 'rho') +
+  cor_theme 
 
 
 ggsave("../figure/A1-2_titers_x_other_titers_4590.png", height=5.5, width=5)
@@ -202,12 +195,9 @@ ggplot(melt_a3_4590, aes(x=N121K_S144K, y=value)) +
                      labels=c(10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240)) +
   scale_y_continuous(breaks=c(0,1,2,3,4,5,6,7,8,9,10), limits=c(0,10),
                      labels=c(10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240)) +
-  geom_smooth(method = "lm", se=FALSE) +
-  stat_regline_equation(label.y=10, label.x=5, aes(label = ..eq.label..), size=2) +
-  stat_regline_equation(label.y=9, label.x=5, aes(label = ..rr.label..), size=2) +
-  
   xlab("3C.2A3 titer") + ylab("Titer") +
-  cor_theme
+  stat_cor(aes(label = ..r.label..), method = 'spearman', cor.coef.name = 'rho') +
+  cor_theme 
 
 
 ggsave("../figure/A3_titers_x_other_titers_4590.png", height=5.5, width=5)
@@ -243,11 +233,9 @@ ggplot(melt_a13_1890, aes(x=N121K_T135K_N171K, y=value)) +
                      labels=c(10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240)) +
   scale_y_continuous(breaks=c(0,1,2,3,4,5,6,7,8,9,10), limits=c(0,10),
                      labels=c(10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240)) +
-  geom_smooth(method = "lm", se=FALSE) +
-  stat_regline_equation(label.y=10, label.x=5, aes(label = ..eq.label..), size=2) +
-  stat_regline_equation(label.y=9, label.x=5, aes(label = ..rr.label..), size=2) +
   xlab("3C.2A1-3 titer") + ylab("Titer") +
-  cor_theme
+  stat_cor(aes(label = ..r.label..), method = 'spearman', cor.coef.name = 'rho') +
+  cor_theme 
 
 
 ggsave("../figure/A1-3_titers_x_other_titers_1890.png", height=5.5, width=5)
@@ -281,11 +269,9 @@ ggplot(melt_a22_4590, aes(x=T131K_R142K_R261Q, y=value)) +
                      labels=c(10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240)) +
   scale_y_continuous(breaks=c(0,1,2,3,4,5,6,7,8,9,10), limits=c(0,10),
                      labels=c(10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240)) +
-  geom_smooth(method = "lm", se=FALSE) +
-  stat_regline_equation(label.y=10, label.x=5, aes(label = ..eq.label..), size=2) +
-  stat_regline_equation(label.y=9, label.x=5, aes(label = ..rr.label..), size=2) +
   labs(x="3C.2A2-2 titer", y="Titer") +
-  cor_theme
+  stat_cor(aes(label = ..r.label..), method = 'spearman', cor.coef.name = 'rho') +
+  cor_theme 
 
 
 ggsave("../figure/A2-2_titers_x_other_titers_1890.png", height=5.5, width=5)
