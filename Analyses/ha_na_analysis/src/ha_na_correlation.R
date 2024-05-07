@@ -62,9 +62,7 @@ p_rmv_wt = ggplot(df_rmv[df_rmv$winner.x == "F", ], aes(x=Titer.x, y=Titer.y)) +
   #theme_bw() +
   cor_theme +
   theme(legend.position="none") +
-  geom_smooth(method = "lm", se=FALSE) +
-  stat_regline_equation(label.y=10, label.x=5, aes(label = ..eq.label..), size=2.5) +
-  stat_regline_equation(label.y=9, label.x=5, aes(label = ..rr.label..), size=2.5)
+  stat_cor(aes(label = ..r.label..), method = 'spearman', cor.coef.name = 'rho')
 
 
 p_rmv_wn = ggplot(df_rmv[df_rmv$winner.x == "T", ], aes(x=Titer.x, y=Titer.y)) +
@@ -76,9 +74,7 @@ p_rmv_wn = ggplot(df_rmv[df_rmv$winner.x == "T", ], aes(x=Titer.x, y=Titer.y)) +
   #theme_bw() +
   cor_theme +
   theme(legend.position="none") +
-  geom_smooth(method = "lm", se=FALSE) +
-  stat_regline_equation(label.y=10, label.x=5, aes(label = ..eq.label..), size=2.5) +
-  stat_regline_equation(label.y=9, label.x=5, aes(label = ..rr.label..), size=2.5)
+  stat_cor(aes(label = ..r.label..), method = 'spearman', cor.coef.name = 'rho')
 
 
 ggarrange( p_rmv_wt, p_rmv_wn,
@@ -148,9 +144,7 @@ p_wt = ggplot(df[df$winner.x == "F", ], aes(x=Titer.x, y=Titer.y)) +
   #theme_bw() +
   cor_theme +
   theme(legend.position="none") +
-  geom_smooth(method = "lm", se=FALSE) +
-  stat_regline_equation(label.y=10, label.x=5, aes(label = ..eq.label..), size=2.5) +
-  stat_regline_equation(label.y=9, label.x=5, aes(label = ..rr.label..), size=2.5)
+  stat_cor(aes(label = ..r.label..), method = 'spearman', cor.coef.name = 'rho')
 
 p_wn = ggplot(df[df$winner.x == "T", ], aes(x=Titer.x, y=Titer.y)) +
   geom_jitter(alpha = 0.2, width=0.15, height=0.15) +
@@ -161,9 +155,7 @@ p_wn = ggplot(df[df$winner.x == "T", ], aes(x=Titer.x, y=Titer.y)) +
   #theme_bw() +
   cor_theme +
   theme(legend.position="none") +
-  geom_smooth(method = "lm", se=FALSE) +
-  stat_regline_equation(label.y=10, label.x=5, aes(label = ..eq.label..), size=2.5) +
-  stat_regline_equation(label.y=9, label.x=5, aes(label = ..rr.label..), size=2.5)
+  stat_cor(aes(label = ..r.label..), method = 'spearman', cor.coef.name = 'rho')
 
 
 
