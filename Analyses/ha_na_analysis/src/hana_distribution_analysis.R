@@ -21,22 +21,21 @@ hana_indiv = merge(ha, na)
 # data frame of fraction detectable per age 
 ################################################################
 
-detach(package:plyr)
+#detach(package:plyr)
 
 # For each individual, add indicators whether they have HA, NA, have only HA, have only NA,
 # have non, and have both
 # hana_indiv after adding these indicators will be used for logistic regression
 
-hana_indiv$haveHA = ifelse( rowSums (hana_indiv[, grep("_ha", colnames(hana_indiv)) ], na.rm=T) > 0, 1, 0 )
-hana_indiv$haveNA = ifelse( rowSums (hana_indiv[, grep("_na", colnames(hana_indiv)) ], na.rm=T) > 0, 1, 0 )
+detection_threshold = 1 # By default, consider detectable all titers coded as >=1
 
-hana_indiv$onlyHA = ifelse( hana_indiv$haveHA == 1 & hana_indiv$haveNA == 0, 1, 0 )
-hana_indiv$onlyNA = ifelse( hana_indiv$haveHA == 0 & hana_indiv$haveNA == 1, 1, 0 )
-
-hana_indiv$none = ifelse( hana_indiv$haveHA == 0 & hana_indiv$haveNA == 0, 1, 0 )
-hana_indiv$both = ifelse( hana_indiv$haveHA == 1 & hana_indiv$haveNA == 1, 1, 0 )
-
-
+hana_indiv <- as_tibble(hana_indiv) %>%
+  mutate(haveHA = if_any(.cols = matches('_ha'), function(x){ifelse(is.na(x), F, x >= detection_threshold)}),
+         haveNA = if_any(.cols = matches('_na'), function(x){ifelse(is.na(x), F, x >= detection_threshold)}),
+         onlyHA = haveHA & !haveNA,
+         onlyNA = haveNA & !haveHA,
+         none = !haveHA & !haveNA,
+         both = haveHA & haveNA)
 
 # This is for making hana_ag_m,
 # to make plot of fraction of individuals with detectable antibody by age group for main figure
