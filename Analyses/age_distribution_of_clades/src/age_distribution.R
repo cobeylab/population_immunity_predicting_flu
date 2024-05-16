@@ -5,6 +5,8 @@
 #} 
 #library(plyr)
 library(dplyr)
+library(cowplot)
+theme_set(theme_cowplot())
 
 ########################################################################################
 
@@ -27,105 +29,69 @@ process_data = function(data_assigned){
   return (data_assigned)
 }
 
-data_assigned_NA_17 = process_data(data_assigned_NA_17)
-data_assigned_US_17 = process_data(data_assigned_US_17)
-data_assigned_NE_17 = process_data(data_assigned_NE_17)
-
-######################################################################################
-
-library(ggpubr)
-library(cowplot)
-
-# NA 17
-
-phist = gghistogram( data_assigned_NA_17,
-                      x="age", fill="A2", bins=20,
-                     palette = c("#C77CFF", "Black")) +
-  theme(legend.title = element_blank(),
-        legend.position = "top")
+data_assigned_NA_17 = process_data(data_assigned_NA_17) %>%
+  mutate(region = "North America")
+data_assigned_US_17 = process_data(data_assigned_US_17) %>%
+  mutate(region = 'United States')
+data_assigned_NE_17 = process_data(data_assigned_NE_17) %>%
+  mutate(region = "Northeastern US")
 
 
-pdensity = ggdensity( data_assigned_NA_17,
-                      x="age", color="A2", alpha=0,
-                      palette = c("#C77CFF", "Black"), size=1) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0)), position = "right") +
-  theme_half_open(11, rel_small = 1) +
-  rremove("x.axis") +
-  rremove("xlab") +
-  rremove("x.text") +
-  rremove("x.ticks") +
-  rremove("legend") +
-  ggtitle("North America") +
-  coord_cartesian(clip="off")
+combined_data <- bind_rows(data_assigned_NA_17, data_assigned_US_17, data_assigned_NE_17) %>%
+  as_tibble() %>%
+  mutate(region = factor(region,levels = c("North America", "United States", "Northeastern US")))
 
 
-aligned_plots = align_plots(phist, pdensity, align="hv", axis="tblr")
-p_NA_17 = ggdraw(aligned_plots[[1]]) + draw_plot(aligned_plots[[2]])
-
-p_NA_17
-#ggsave("../figure/density_histogram_NA_17.png", height=3, width=3)
+binw = 3
 
 
-# US 17
 
-phist = gghistogram( data_assigned_US_17,
-                     x="age", fill="A2", bins=20,
-                     palette = c("#C77CFF", "Black")) +
-  theme(legend.position="none")
+# Plot with US alone (for main text)
+density_histogram_1718_all_regions <- combined_data %>% 
+  filter(region == 'United States') %>%
+  ggplot(aes(x = age)) +
+  geom_histogram(aes(y = ..count.. * 0.0001, fill = A2), alpha = 0.8, 
+                 color = 'black', binwidth = binw) +
+  scale_y_continuous(name = 'Number of GISAID isolates',
+                     labels = function(x){x/0.0001},
+                     sec.axis = sec_axis(~ ., name = 'Density')) +
+  geom_density(aes(color = A2), linewidth = 1.5)  + 
+  theme(legend.position = c(0.35,0.95),
+        axis.title = element_text(size = 11),
+        axis.text = element_text(size = 11),
+        legend.text = element_text(size = 11),
+        legend.direction = "horizontal") +
+  scale_fill_manual(name = '', values = c("#C77CFF","gray")) +
+  scale_color_manual(name = '', values = c("purple","black")) +
+  guides(color = NULL) +
+  xlab('Age')
 
-
-pdensity = ggdensity( data_assigned_US_17,
-                      x="age", color="A2", alpha=0,
-                      palette = c("#C77CFF", "Black"), size=1) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0)), position = "right") +
-  theme_half_open(11, rel_small = 1) +
-  rremove("x.axis") +
-  rremove("xlab") +
-  rremove("x.text") +
-  rremove("x.ticks") +
-  rremove("legend") +
-  ggtitle("United States")+
-  coord_cartesian(clip="off")
-
-aligned_plots = align_plots(phist, pdensity, align="hv", axis="tblr")
-p_US_17 = ggdraw(aligned_plots[[1]]) + draw_plot(aligned_plots[[2]])
-
-p_US_17
-#ggsave("../figure/density_histogram_US_17.png", height=3, width=3)
+save_plot("../figure/density_histogram_1718_US.pdf",
+          density_histogram_1718_all_regions,
+          base_height = 3, base_width = 5)
 
 
-# NE 17
+# Plot with all 3 regions (for the supplement)
+density_histogram_1718_all_regions <- combined_data %>% 
+  ggplot(aes(x = age)) +
+  geom_histogram(aes(y = ..count.. * 0.0001, fill = A2), alpha = 0.8, 
+                 color = 'black', binwidth = binw) +
+  scale_y_continuous(name = 'Number of GISAID isolates',
+                     labels = function(x){x/0.0001},
+                     sec.axis = sec_axis(~ ., name = 'Density')) +
+  geom_density(aes(color = A2), linewidth = 2)  + 
+  facet_wrap("region", ncol = 1, scales = 'free_y') +
+  theme(legend.position = 'top') +
+  scale_fill_manual(name = '', values = c("#C77CFF","gray")) +
+  scale_color_manual(name = '', values = c("purple","black")) +
+  guides(color = NULL) +
+  xlab('Age')
+
+save_plot("../figure/density_histogram_1718_all_regions.pdf",
+          density_histogram_1718_all_regions,
+          base_height = 9, base_width = 5)
 
 
-phist = gghistogram( data_assigned_NE_17,
-                     x="age", fill="A2", bins=20,
-                     palette = c("#C77CFF", "Black")) +
-  theme(legend.position="none")
 
 
-pdensity = ggdensity( data_assigned_NE_17,
-                      x="age", color="A2", alpha=0,
-                      palette = c("#C77CFF", "Black"), size=1) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0)), position = "right") +
-  theme_half_open(11, rel_small = 1) +
-  rremove("x.axis") +
-  rremove("xlab") +
-  rremove("x.text") +
-  rremove("x.ticks") +
-  rremove("legend") + 
-  ggtitle("Northeastern US")+
-  coord_cartesian(clip="off")
-
-aligned_plots = align_plots(phist, pdensity, align="hv", axis="tblr")
-p_NE_17 = ggdraw(aligned_plots[[1]]) + draw_plot(aligned_plots[[2]])
-
-p_NE_17
-#ggsave("../figure/density_histogram_NE_17.png", height=3, width=3)
-
-
-ggarrange(p_NA_17, p_US_17, p_NE_17,
-          nrow=3, heights=c(7,5,5),
-          labels=c("A", "B", "C")) 
-
-ggsave("../figure/density_histogram_1718.png", height=6, width=4)
 
