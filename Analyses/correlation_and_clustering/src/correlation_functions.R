@@ -1,20 +1,82 @@
 #library(cocor)
+library(dplyr)
+library(tidyr)
+library(psych)
 
-
-get_cormat = function(sera, cols, method){
+get_cormat = function(sera, cols, method, n_imputations){
+  
   #sera: matrix of titers, each virus at each column
-  cormat = cor(sera[,cols], method = method, use="pairwise.complete.obs")
-  cormat[upper.tri(cormat)] = NA
-  m_cormat = melt(cormat, na.rm=T)
-  m_cormat
+  titers <- sera[,cols] %>%
+    mutate(replicate = 1) %>%
+    select(replicate, everything())
+  
+  if(n_imputations > 0){
+    long_form_titers <- titers %>%
+      mutate(person = 1:n()) %>%
+      select(replicate, person, everything()) %>%
+      pivot_longer(cols = !any_of(c('replicate','person')), names_to = 'virus', values_to = 'log2_titer') %>%
+      # Recalculate log2 titers without dividing by 10
+      # (assumed by the imputation function)
+      mutate(log2_titer = log(2^log2_titer * 10, base = 2))
+    
+    imputed_titers <- 
+      replicate(n_imputations,
+                long_form_titers %>%
+                  mutate(log2_titer = impute_continuous_titers(log2_titer)),
+                simplify = F) %>%
+      bind_rows(.id = 'replicate')
+    
+    titers <- imputed_titers %>%
+      pivot_wider(names_from = 'virus', values_from = "log2_titer") %>%
+      select(-person)
+  }
+  
+  cormat <- lapply(
+    as.list(unique(titers$replicate)),
+    function(i){
+      # This function is a pairwise version of cor.test from package psych 
+      pw_cors <- corr.test(titers %>%
+                             filter(replicate == i) %>%
+                             select(-replicate),
+                           method = method)
+      
+      cormat = pw_cors$r
+      cormat[upper.tri(cormat)] = NA
+      cormat <- melt(cormat, na.rm = T) %>%
+        rename(r = value)
+      
+      # Unadjusted p values
+      #pvaluemat <- pw_cors$p
+      #pvaluemat[upper.tri(pvaluemat)] = NA
+      #pvaluemat <- melt(pvaluemat, na.rm = T) %>%
+      #  rename(p = value)
+      
+      return(cormat)
+    }
+  ) %>%
+    bind_rows(.id = 'replicate') %>%
+    # compute the average across replicates (if no imputations, this will be
+    # original data as a single replicate)
+    group_by(Var1, Var2) %>%
+    summarise(r = mean(r)) %>%
+    ungroup() %>%
+    mutate(Virus1 = factor(Var1, levels = vlevels),
+           Virus2 = factor(Var2, levels = rev(vlevels))) %>%
+    select(-Var1, -Var2)
+  
+  return(cormat)
+  #cormat = cor(sera[,cols], method = method, use="pairwise.complete.obs")
+  #cormat[upper.tri(cormat)] = NA
+  #m_cormat = melt(cormat, na.rm=T)
+  #m_cormat
 }
 
-get_ag_cormat = function(ag_sera, method){
+get_ag_cormat = function(ag_sera, method, n_imputations){
   #sera: age group in the first column and then titers by virus for each column
   ag_cormat = ag_sera %>%
     group_by(Age_group) %>%
-    do(get_cormat(., c(2:ncol(ag_sera)), method))
-  
+    do(get_cormat(., c(2:ncol(ag_sera)), method, n_imputations))
+
   ag_cormat
 }
 
@@ -46,82 +108,6 @@ scale_each_row = function(sera) {
     tz = rbind(tz, row1)
   }
   tz
-}
-
-cor_test_rp = function(ag_sera, cols, method){
-  
-  titers = ag_sera[,cols]
-  cortest = c()
-  
-  for(i in c(1: (ncol(titers))) ) {
-    for(j in c( (i) : (ncol(titers)) )){
-      
-      ct = cor.test(titers[[i]], as.vector(titers[[j]]), method=method)
-      ct1 = c(colnames(titers)[i], colnames(titers)[j], ct$estimate, ct$p.value)
-      cortest = rbind(cortest, ct1)
-      
-    } 
-  }
-  colnames(cortest) = c("Virus1", "Virus2", "r", "p")
-  
-  data.frame(cortest)
-}
-
-get_ag_cormat_rp = function(ag_sera, method){
-  #sera: age group in the first column and then titers by virus for each column
-  ag_cormat = ag_sera %>%
-    group_by(Age_group) %>%
-    do(cor_test_rp(., c(2:ncol(ag_sera)), method))
-  
-  ag_cormat$r = as.numeric(ag_cormat$r)
-  ag_cormat$p = as.numeric(ag_cormat$p)
-  
-  ag_cormat$Virus1 = factor(ag_cormat$Virus1, levels = vlevels)
-  ag_cormat$Virus2 = factor(ag_cormat$Virus2, levels = rev(vlevels))
-  
-  ag_cormat
-}
-
-
-cor_test_rp_rmv_pair_undetectable = function(ag_sera, cols, age_group, method){
-  
-  titers = ag_sera[ag_sera$Age_group == age_group, cols]
-
-  is = c()
-  js = c()
-  coeffs = c()
-  ps = c()
-  Age_group = c()
-
-  for(i in c(1: (ncol(titers))) ) {
-    for(j in c( (i) : (ncol(titers)) )){
-      
-      v1 = c()
-      v2 = c()
-      for (k in 1:nrow(titers)){
-        #print (paste("i:", i, " j:", j, " k:", k))
-        if(is.na(titers[k,i]) | is.na(titers[k,j])){
-          next
-        }
-        if(titers[k,i] == 0 & titers[k,j]==0){
-          next
-        }
-        v1 = c(v1, titers[k,i])
-        v2 = c(v2, titers[k,j])
-      }
-      
-      ccc = cor.test(v1, v2, method = method, use="complete.obs")
-      is = c(is, colnames(titers)[i])
-      js = c(js, colnames(titers)[j])
-      coeffs = c(coeffs, ccc$estimate)
-      ps = c(ps, ccc$p.value)
-      Age_group = c(Age_group, age_group)
-      
-    } 
-  }
-  pair_df = data.frame(Age_group, is, js, coeffs, ps)
-  
-  pair_df
 }
 
 colv = colnames(ag_sera)[2:ncol(ag_sera)]

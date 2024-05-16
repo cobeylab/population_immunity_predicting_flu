@@ -43,7 +43,7 @@ source("correlation_functions.R")
 #1. no scale
 
 
-ag_cormat = get_ag_cormat_rp(ag_sera, "spearman")
+ag_cormat = get_ag_cormat(ag_sera, "spearman", n_imputations = 1000)
 ag_cormat$label = ag_cormat$Age_group 
 
 ag_cormat$label = gsub("\\(0,15\\]", "1-15 years", ag_cormat$label)

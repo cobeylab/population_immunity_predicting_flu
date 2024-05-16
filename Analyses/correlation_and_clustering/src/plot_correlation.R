@@ -59,24 +59,24 @@ ggsave(paste0("../figure/Correlation_heatmap_spearman_real_rmv_undetectable.tiff
 # 2.1. The age group greater than 1-4 
 
 
-ggplot(ag_cormat, aes(Virus1, Virus2, fill=r_ccg)) +
-  geom_tile(col="white") +
-  scale_fill_gradient2(low="white", mid = "light blue", high="blue",  
-                       midpoint = 0.75, 
-                       name="Spearman rho") +
-  coord_fixed() + 
-  facet_wrap(~label) +
-  ylab("") + xlab("") +
-  scale_x_discrete(labels = plot_label) +
-  scale_y_discrete(labels = rev(plot_label) ) +
-  theme_cor
+# ggplot(ag_cormat, aes(Virus1, Virus2, fill=r_ccg)) +
+#   geom_tile(col="white") +
+#   scale_fill_gradient2(low="white", mid = "light blue", high="blue",  
+#                        midpoint = 0.75, 
+#                        name="Spearman rho") +
+#   coord_fixed() + 
+#   facet_wrap(~label) +
+#   ylab("") + xlab("") +
+#   scale_x_discrete(labels = plot_label) +
+#   scale_y_discrete(labels = rev(plot_label) ) +
+#   theme_cor
 
-ggsave(paste0("../figure/Correlation_heatmap_spearman_greater_than_baseline_real_rmv_undetectable.png"),
-       height=3.5, width = 5)
-ggsave(paste0("../figure/Correlation_heatmap_spearman_greater_than_baseline_real_rmv_undetectable.pdf"),
-       height=3.5, width = 5)
-ggsave(paste0("../figure/Correlation_heatmap_spearman_greater_than_baseline_real_rmv_undetectable.tiff"),
-       height=3.5, width = 5)
+# ggsave(paste0("../figure/Correlation_heatmap_spearman_greater_than_baseline_real_rmv_undetectable.png"),
+#        height=3.5, width = 5)
+# ggsave(paste0("../figure/Correlation_heatmap_spearman_greater_than_baseline_real_rmv_undetectable.pdf"),
+#        height=3.5, width = 5)
+# ggsave(paste0("../figure/Correlation_heatmap_spearman_greater_than_baseline_real_rmv_undetectable.tiff"),
+#        height=3.5, width = 5)
 
 
 # 2.2. The age group weaker than 1-4

@@ -99,8 +99,14 @@ get_num_sig_within = function(ag_cormat_repl, ag_cormat, ag, vlevels, n_repl, a,
         
         age_group_1 = ag_cormat_repl[[r]][ag_cormat_repl[[r]]$Age_group == ag[a],]
         
-        group_1 = age_group_1[age_group_1$Virus1 == vlevels[i] & age_group_1$Virus2 == vlevels[j],]
-        group_2 = age_group_1[age_group_1$Virus1 == vlevels[k] & age_group_1$Virus2 == vlevels[m],]
+        group_1 <- age_group_1 %>% 
+          filter((Virus1 == vlevels[i] & Virus2 == vlevels[j]) |
+                   (Virus1 == vlevels[j] & Virus2 == vlevels[i]))
+        
+        
+        group_2 <- age_group_1  %>% 
+          filter((Virus1 == vlevels[k] & Virus2 == vlevels[m]) |
+                   (Virus1 == vlevels[m] & Virus2 == vlevels[k]))
         
         diff_less = group_2[,"r"] - group_1[,"r"]
         
@@ -110,8 +116,14 @@ get_num_sig_within = function(ag_cormat_repl, ag_cormat, ag, vlevels, n_repl, a,
       
       ag1 = data.frame( ag_cormat[ag_cormat$Age_group == ag[a], ] )
       
-      r1 = ag1[ag1$Virus1 == vlevels[i] & ag1$Virus2 == vlevels[j], "r"]
-      r2 = ag1[ag1$Virus1 == vlevels[k] & ag1$Virus2 == vlevels[m], "r"]
+      r1 = ag1 %>% 
+        filter((Virus1 == vlevels[i] & Virus2 == vlevels[j]) |
+                 (Virus1 == vlevels[j] & Virus2 == vlevels[i])) %>% pull(r)
+      
+      r2 = ag1 %>% 
+        filter((Virus1 == vlevels[k] & Virus2 == vlevels[m]) |
+                 (Virus1 == vlevels[m] & Virus2 == vlevels[k])) %>% pull(r)
+      
       
       null_dist_less = null_dist_less - (r2-r1)
       null_dist_less = sort(null_dist_less)
@@ -126,77 +138,3 @@ get_num_sig_within = function(ag_cormat_repl, ag_cormat, ag, vlevels, n_repl, a,
   return (num_sig)
   
 }
-
-
-
-get_num_sig_pval_within = function(ag_cormat_repl, ag_cormat, ag, vlevels, n_repl, a, i, j){
-  
-  num_sig = 0
-  ks = c()
-  ms = c()
-  ps = c()
-  
-  for (k in 1:length(vlevels)){
-    for(m in k:length(vlevels)) {
-      
-      if(k==m) {
-        next
-      }
-      
-      null_dist_less = c()
-      for(r in (1:n_repl)){
-        
-        age_group_1 = ag_cormat_repl[[r]][ag_cormat_repl[[r]]$Age_group == ag[a],]
-        
-        group_1 = age_group_1[age_group_1$Virus1 == vlevels[i] & age_group_1$Virus2 == vlevels[j],]
-        group_2 = age_group_1[age_group_1$Virus1 == vlevels[k] & age_group_1$Virus2 == vlevels[m],]
-        
-        diff_less = group_2[,"r"] - group_1[,"r"]
-        
-        null_dist_less = c(null_dist_less, diff_less)
-        
-      }
-      
-      ag1 = data.frame( ag_cormat[ag_cormat$Age_group == ag[a], ] )
-      
-      r1 = ag1[ag1$Virus1 == vlevels[i] & ag1$Virus2 == vlevels[j], "r"]
-      r2 = ag1[ag1$Virus1 == vlevels[k] & ag1$Virus2 == vlevels[m], "r"]
-      
-      null_dist_less = null_dist_less - (r2-r1)
-      null_dist_less = sort(null_dist_less)
-      
-
-      
-      if(null_dist_less[as.integer( n_repl*0.95 )] < (r2-r1) ){
-        
-        for (p in (n_repl*0.95):n_repl){
-          if (null_dist_less[n_repl] < (r2-r1)) {
-            pval = 0
-            break
-          }
-          
-          if (null_dist_less[p] < (r2-r1)){
-            next
-          }else {
-            pval = (n_repl - p + 1)/(n_repl)
-            #print (paste0 (p, " ", null_dist_less[p], " ", (r2-r1), " ", pval))
-            
-            break
-          }
-          
-        }
-        num_sig = num_sig + 1
-        ks = c(ks, k)
-        ms = c(ms, m)
-        ps = c(ps, pval)
-      }
-      
-    }
-  }
-  
-  df = data.frame(ks, ms, ps)
-  return (df)
-  
-}
-
-

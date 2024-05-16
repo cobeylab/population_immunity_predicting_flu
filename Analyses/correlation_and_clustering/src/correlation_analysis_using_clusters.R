@@ -3,7 +3,6 @@ library(dplyr)
 library(reshape2)
 source("analysis_util.R")
 
-
 get_cormat = function(sera, cols, method){
   #sera: matrix of titers, each virus at each column
   cormat = cor(sera[,cols], method = method, use="pairwise.complete.obs")

@@ -49,7 +49,8 @@ ag_sera = ag_sera[rs != 0, ]
 
 source("correlation_functions.R")
 
-ag_cormat = get_ag_cormat_rp(ag_sera, "spearman")
+ag_cormat <- get_ag_cormat(ag_sera, "spearman", n_imputations = 1000)  
+
 ag_cormat$label = ag_cormat$Age_group 
 ag_cormat$label = gsub("\\(0,4\\]", "1-4", ag_cormat$label)
 ag_cormat$label = gsub("\\(4,17\\]", "5-17", ag_cormat$label)
@@ -70,32 +71,42 @@ ag = sort(ag)
 ag_cormat_repl = list()
 
 n_repl=1000
+# Here we can do a single random imputation each time titers are reshuffled
 for(r in 1:n_repl){
   
   ag_sera_resample = get_resamples(ag_sera, ag)
-  ag_cormat_1 = get_ag_cormat_rp(ag_sera_resample, "spearman")
+  ag_cormat_1 = get_ag_cormat(ag_sera_resample, "spearman", n_imputations = 1)
   ag_cormat_repl[[r]] = data.frame(ag_cormat_1)  
 }
 
 
-r_ccg = rep(NA, 36)
-r_ccl = rep(NA, 36)
+
+n_virus_pairs <-  ag_cormat %>% filter(Age_group == '(0,4]') %>% count() %>% pull(n)
+
+r_ccg = rep(NA, n_virus_pairs)
+r_ccl = rep(NA, n_virus_pairs)
 
 for(a in 2:length(ag)){
 
-  for(i in 1:length(vlevels)){
-    for(j in i:length(vlevels)){
-      
+  for(i in 1:n_virus_pairs){
+    v1 <- ag_cormat %>% filter(Age_group == ag[a]) %>% slice(i) %>% pull(Virus1)
+    v2 <- ag_cormat %>% filter(Age_group == ag[a]) %>% slice(i) %>% pull(Virus2)
+    
+    if(v1 == v2){
+      r_ccg = c(r_ccg, NA)
+      r_ccl = c(r_ccl, NA) 
+    }else{
       null_dist_greater = c()
       null_dist_less = c()
       
       for(r in 1:n_repl){
+
         age_group_1 = ag_cormat_repl[[r]][ag_cormat_repl[[r]]$Age_group == ag[1],]
         age_group_2 = ag_cormat_repl[[r]][ag_cormat_repl[[r]]$Age_group == ag[a],]
-        
-        group_1 = age_group_1[age_group_1$Virus1 == vlevels[i] & age_group_1$Virus2 == vlevels[j],]
-        group_2 = age_group_2[age_group_2$Virus1 == vlevels[i] & age_group_2$Virus2 == vlevels[j],]
-        
+          
+        group_1 = age_group_1 %>% filter(Virus1 == v1, Virus2 == v2)
+        group_2 = age_group_2 %>% filter(Virus1 == v1, Virus2 == v2)
+          
         diff_greater = group_2[,"r"] - group_1[,"r"]
         diff_less = group_1[,"r"] - group_2[,"r"]
         
@@ -106,9 +117,9 @@ for(a in 2:length(ag)){
       ag1 = data.frame( ag_cormat[ag_cormat$Age_group == ag[1], ] )
       ag2 = data.frame( ag_cormat[ag_cormat$Age_group == ag[a], ] )
       
-      r1 = ag1[ag1$Virus1 == vlevels[i] & ag1$Virus2 == vlevels[j], "r"]
-      r2 = ag2[ag2$Virus1 == vlevels[i] & ag2$Virus2 == vlevels[j], "r"]
-  
+      r1 = ag1 %>% filter(Virus1 == v1, Virus2 == v2) %>% pull(r)
+      
+      r2 = ag2 %>% filter(Virus1 == v1, Virus2 == v2) %>% pull(r)
       
       null_dist_greater = null_dist_greater - (r2-r1)
       null_dist_less = null_dist_less - (r1-r2)
@@ -130,10 +141,7 @@ for(a in 2:length(ag)){
       
     }
   }
-  
 }
-
-
 
 # 2.1. The age group greater than 1-4 
 ag_cormat$r_ccg = r_ccg
@@ -147,7 +155,9 @@ ag_cormat$r_ccl = r_ccl
 
 # 3. Within an age group, rank of correlation
 
-rank = c()
+ag_cormat <- ag_cormat %>% mutate(rank = NA)
+#rank <- c()
+
 for(a in 1:length(ag)){
   
   #For each age group
@@ -156,20 +166,28 @@ for(a in 1:length(ag)){
     
     for (j in (i:length(vlevels))){
       
+      print (paste(ag[a], vlevels[i], vlevels[j]))
+      
       #compare if correlation coefficient of each pair is 
       # significantly different from those of all other pairs
       if (i == j) {
-        rank = c(rank, NA)
+        #rank = c(rank, NA)
+        num_sig = NA
       }else{
         num_sig = get_num_sig_within(ag_cormat_repl, ag_cormat, ag, vlevels, n_repl, a, i, j)
-        rank = c(rank, num_sig)
+        #rank = c(rank, num_sig)
       }
-      print (paste(i, j, rank))
+      
+      ag_cormat[ag_cormat$Age_group == ag[a] &
+                  (
+                    (ag_cormat$Virus1 == vlevels[i] & ag_cormat$Virus2 == vlevels[j]) |
+                    (ag_cormat$Virus1 == vlevels[j] & ag_cormat$Virus2 == vlevels[i])
+                    
+                  ), "rank"] <- num_sig
     }  
   }
 }
 
-ag_cormat$rank = rank
 
 
 

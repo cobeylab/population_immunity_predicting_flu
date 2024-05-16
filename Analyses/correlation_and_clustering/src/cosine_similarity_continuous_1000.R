@@ -8,6 +8,7 @@ library(stringr)
 
 #read titer data
 source("../../../Data/script/load_data/load_data.R")
+source("analysis_util.R")
 
 ######################################################################
 
@@ -24,41 +25,6 @@ cosine_theme = theme_bw() + theme(
   strip.background = element_rect(fill = "white", colour = "white"))
 
 ################################################################
-
-
-impute_continuous_titers <- function(log2_titer){
-  original_titer <- 2^log2_titer
-  
-  # For any titers coded as 1:10, recode as 1:1
-  original_titer[abs(original_titer) - 10 < 1e-5] <- 1
-  
-  # Sample continuous value between original titer and next dilution
-  # (Next dilution is 20 if original titer coded as 1:1, *2 otherwise)
-  next_dilutions <- original_titer*ifelse(original_titer ==1, 20, 2)
-  
-  continuous_titers <- runif(length(original_titer),
-                             min = original_titer, max = next_dilutions)
-  
-  return(log(continuous_titers, base = 2))
-  
-  
-  
-  # tibble(original_titer = 2^log2_titer) %>%
-  #   # For any titers coded as 1:10, recode as 1:1
-  #   mutate(recoded_titer = case_when(
-  #     abs(original_titer - 10) < 1e-5 ~ 1,
-  #     T ~ original_titer
-  #   )) %>%
-  #   mutate(next_dilution = case_when(
-  #     recoded_titer == 1 ~ 20,
-  #     recoded_titer !=1 ~ recoded_titer*2
-  #   )) %>%
-  #   rowwise() %>%
-  #   mutate(continuous_titer = runif(1, min = recoded_titer, max = next_dilution),
-  #          continuous_log2_titer = log(continuous_titer, base = 2)) %>%
-  #   pull(continuous_log2_titer)
-}
-
 
 
 # First, estimate expected Cosine similarity of 8-dimensional vectors
