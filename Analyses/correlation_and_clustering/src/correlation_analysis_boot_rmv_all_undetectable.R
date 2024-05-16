@@ -1,4 +1,5 @@
 library(ggplot2)
+library(cowplot)
 library(dplyr)
 library(reshape2)
 source("analysis_util.R")
@@ -32,6 +33,33 @@ sera0$label = gsub( "\\(44,64\\]", "45-64", sera0$label)
 sera0$label = gsub("\\(64,90\\]", "65-90", sera0$label)
 
 sera0$label = factor(sera0$label, levels = c("1-4", "5-17", "18-44", "45-64", "65-90"))
+
+# This is a convenience spot to make an age distribution figure for the supplement:
+
+age_dist <- sera0 %>% 
+  ggplot(aes(x = Age)) +
+  geom_histogram(binwidth = 1) +
+  xlab('Age (years)') +
+  ylab('Number of serum sample donors') +
+  theme_cowplot() +
+  theme(axis.title = element_text(size = 11),
+        axis.text = element_text(size = 11))
+
+age_dist_binned <- sera0 %>% group_by(label) %>% count() %>%
+  ggplot(aes(x = label, y = n)) +
+  geom_col() +
+  geom_text(aes(label = n), position = position_nudge(x = 0, y = 5)) + 
+  ylab('') +
+  xlab('Age group (years)') +
+  theme_cowplot() +
+  theme(axis.title = element_text(size = 11),
+        axis.text = element_text(size = 11))
+
+
+save_plot("../../sample_age_dist.pdf",
+          plot_grid(age_dist, age_dist_binned, nrow = 1),
+          base_height = 3.5, base_width = 8)
+
 
 # Make data frame for analysis
 # ag_sera: age group + titers
