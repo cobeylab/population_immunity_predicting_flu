@@ -78,7 +78,7 @@ susc_x_label = c("3C.3A", "3C.2A", "3C.2A1-1", "3C.2A1-2", "3C.2A1-3",
 p_freq = ggplot(tb, aes(x=clade, y=freq, fill=clade, linetype = factor(region))) +
   geom_bar(color="black", width = 0.7, position=position_dodge(width=0.9), stat="identity") +
   facet_wrap(~season, nrow=2) +
-  ylab("Frequency") +
+  ylab("Proportion of sequences") +
   xlab("") +
   scale_x_discrete(labels=susc_x_label,
                    breaks = c("c3a", "c2a", "A1", "A1_2", "A1_3", "A2", "A2_2", "A3"),
@@ -214,7 +214,7 @@ ggplot(freq_17_by_AG) +
            width=0.65, color="black") +
   facet_wrap(~label, nrow=3) +
   scale_x_discrete(labels = susc_x_label) +
-  ylab("Frequency") +
+  ylab("Proportion of sequences") +
   xlab("") +
   scale_fill_discrete(guide="none") + 
   scale_linetype_manual(name = "Region", 
@@ -294,7 +294,7 @@ ggplot(freq_16_by_AG) +
            width=0.65, color="black") +
   facet_wrap(~label, nrow=3) +
   scale_x_discrete(labels = susc_x_label) +
-  ylab("Frequency") +
+  ylab("Proportion of sequences") +
   xlab("") +
   scale_fill_discrete(guide="none") + 
   scale_linetype_manual(name = "Region", 

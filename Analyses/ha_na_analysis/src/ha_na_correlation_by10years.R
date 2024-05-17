@@ -144,6 +144,7 @@ rmv_r2 = rbind(rmv_wt_r2, rmv_wn_r2)
 cor.test(df$Titer.x, df$Titer.y)
 
 p_wt = ggplot(df[df$winner.x == "F", ], aes(x=Titer.x, y=Titer.y)) +
+  geom_abline(intercept = 0, slope = 1, linetype = 2) +
   geom_jitter(alpha = 0.2, width=0.15, height=0.15) +
   facet_wrap(~label) +
   labs(x="HA Titer", y="NA Titer") +
@@ -155,6 +156,7 @@ p_wt = ggplot(df[df$winner.x == "F", ], aes(x=Titer.x, y=Titer.y)) +
   stat_cor(aes(label = ..r.label..), method = 'spearman', cor.coef.name = 'rho')
 
 p_wn = ggplot(df[df$winner.x == "T", ], aes(x=Titer.x, y=Titer.y)) +
+  geom_abline(intercept = 0, slope = 1, linetype = 2) +
   geom_jitter(alpha = 0.2, width=0.15, height=0.15) +
   facet_wrap(~label) +
   labs(x="HA Titer", y="NA Titer") +

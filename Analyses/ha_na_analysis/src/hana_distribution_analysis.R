@@ -40,9 +40,8 @@ hana_indiv <- as_tibble(hana_indiv) %>%
 # This is for making hana_ag_m,
 # to make plot of fraction of individuals with detectable antibody by age group for main figure
 
-hana_indiv = transform(hana_indiv, Age_group = cut(Age, breaks = c(0, 10, 20,30,40,50,60,70,90)))
-hana_indiv = transform(hana_indiv, Age_group2 = cut(Age, breaks = c(0, 20, 40, 65, 90)))
-hana_indiv = transform(hana_indiv, Age_group3 = cut(Age, breaks = as.vector(seq(0, 90, 5))) )
+#hana_indiv = transform(hana_indiv, Age_group = cut(Age, breaks = c(0, 10, 20,30,40,50,60,70,90)))
+hana_indiv = transform(hana_indiv, Age_group = cut(Age, breaks = c(0, 4, 17, 44, 64, 90)))
 
 
 hana_ag = hana_indiv %>%
@@ -98,12 +97,15 @@ theme_detect = theme_bw() +
         text = element_text(size=9),
         panel.grid = element_blank())
 
-
-ggplot(hana_ag_m, aes(x=Age_group)) +
+hana_ag_m %>%
+  mutate(Age_group = factor(Age_group,
+                            levels = c('1-4','5-17','18-44',
+                                       '45-64','65-90'))) %>%
+  ggplot(aes(x=Age_group)) +
   geom_bar(aes(y=Fraction, fill=Group), stat="identity") +
-  scale_fill_manual( labels = c("No detectable antibody", "HA only", "NA only", "HA and NA"),
+  scale_fill_manual( labels = c("Neither detectable", "HA only", "NA only", "HA and NA"),
                      name = "",
-                     values = c("black",  "#56B4E9", "#E69F00", "#009E73")) +
+                     values = c("gray",  "blue1", "brown2", "darkorchid3")) +
   xlab("Age group (years)") +
   theme_bw() +
   theme(text = element_text(size=9),

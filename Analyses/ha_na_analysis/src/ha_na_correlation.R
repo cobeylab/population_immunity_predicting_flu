@@ -1,5 +1,6 @@
 library(ggplot2)
 library(ggpubr)
+library(dplyr)
 
 
 ag_brk = c(0,4,17,44,64,90)
@@ -54,27 +55,37 @@ cor.test(df_rmv$Titer.x, df_rmv$Titer.y)
 
 
 p_rmv_wt = ggplot(df_rmv[df_rmv$winner.x == "F", ], aes(x=Titer.x, y=Titer.y)) +
+  geom_abline(intercept = 0, slope = 1, linetype = 2) +
   geom_jitter(alpha=0.2, width=0.15, height=0.15) +
   facet_wrap(~label) +
-  labs(x="HA Titer", y="NA Titer") +
+  labs(x="HA Titer to 3C.2A", y="NA Titer to 3C.2A") +
   scale_y_continuous(limits = c(0, 10), breaks = sq, labels = lb) +
   scale_x_continuous(limits = c(0, 10), breaks = sq, labels = lb) +
-  #theme_bw() +
+  # Fitting a regression line only for HA titers >= 1:20
+  geom_smooth(data = df_rmv[df_rmv$winner.x == "F", ] %>% filter(Titer.x >= 1),
+              method = 'lm') +
   cor_theme +
   theme(legend.position="none") +
-  stat_cor(aes(label = ..r.label..), method = 'spearman', cor.coef.name = 'rho')
+  stat_cor(aes(label = ..r.label..), method = 'spearman', cor.coef.name = 'rho',
+           label.x = 5.5,
+           label.y = 0.5)
 
 
 p_rmv_wn = ggplot(df_rmv[df_rmv$winner.x == "T", ], aes(x=Titer.x, y=Titer.y)) +
+  geom_abline(intercept = 0, slope = 1, linetype = 2) +
   geom_jitter(alpha=0.2, width=0.15, height=0.15) +
   facet_wrap(~label) +
-  labs(x="HA Titer", y="NA Titer") +
+  labs(x="HA Titer to 3C.2A-2", y="NA Titer to 3C.2A-2") +
   scale_y_continuous(limits = c(0, 10), breaks = sq, labels = lb) +
   scale_x_continuous(limits = c(0, 10), breaks = sq, labels = lb) +
+  # Fitting a regression line only for HA titers >= 1:20
+  geom_smooth(data = df_rmv[df_rmv$winner.x == "T", ] %>% filter(Titer.x >=1), method = 'lm') +
   #theme_bw() +
   cor_theme +
   theme(legend.position="none") +
-  stat_cor(aes(label = ..r.label..), method = 'spearman', cor.coef.name = 'rho')
+  stat_cor(aes(label = ..r.label..), method = 'spearman', cor.coef.name = 'rho',
+           label.x = 5.5,
+           label.y = 0.5)
 
 
 ggarrange( p_rmv_wt, p_rmv_wn,
@@ -82,7 +93,7 @@ ggarrange( p_rmv_wt, p_rmv_wn,
            labels = c("A", "B")
 )
 
-#ggsave(paste0("../figure/ha_na_correlation_rmv_all0s.png"), height=8, width=5.2)
+ggsave(paste0("../figure/ha_na_correlation_rmv_all0s.png"), height=8, width=5.2)
 
 
 # correlation coefficient and p value 
@@ -136,6 +147,7 @@ rmv_r2 = rbind(rmv_wt_r2, rmv_wn_r2)
 cor.test(df$Titer.x, df$Titer.y)
 
 p_wt = ggplot(df[df$winner.x == "F", ], aes(x=Titer.x, y=Titer.y)) +
+  geom_abline(intercept = 0, slope = 1, linetype = 2) +
   geom_jitter(alpha = 0.2, width=0.15, height=0.15) +
   facet_wrap(~label) +
   labs(x="HA Titer", y="NA Titer") +
@@ -147,6 +159,7 @@ p_wt = ggplot(df[df$winner.x == "F", ], aes(x=Titer.x, y=Titer.y)) +
   stat_cor(aes(label = ..r.label..), method = 'spearman', cor.coef.name = 'rho')
 
 p_wn = ggplot(df[df$winner.x == "T", ], aes(x=Titer.x, y=Titer.y)) +
+  geom_abline(intercept = 0, slope = 1, linetype = 2) +
   geom_jitter(alpha = 0.2, width=0.15, height=0.15) +
   facet_wrap(~label) +
   labs(x="HA Titer", y="NA Titer") +
