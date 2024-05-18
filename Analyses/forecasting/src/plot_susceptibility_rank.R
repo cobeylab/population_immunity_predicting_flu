@@ -289,10 +289,17 @@ if (main == 1) {
   
   
   
-  ggarrange( p_obs_titer,
-             ggarrange(p_all,
+  ggarrange( p_obs_titer +
+               theme(axis.text = element_text(size = 8),
+                     axis.title = element_text(size = 8),
+                     legend.text = element_text(size = 8)),
+             ggarrange(p_all +
+                         theme(axis.text = element_text(size = 8),
+                               axis.title = element_text(size = 8)),
                         p_ag + theme(legend.position = 'top',
-                                     axis.text.x = element_text(angle = -90, vjust = 0),
+                                     axis.text.x = element_text(angle = -90, vjust = 0, size =7),
+                                     axis.text.y = element_text(size = 8),
+                                     axis.title = element_text(size = 8),
                                      legend.box.spacing = unit(1, 'pt')) +
                         guides(color=guide_legend(nrow=1,byrow=TRUE)),
                         ncol = 2, nrow = 1, widths=c(20,30), heights=c(10,10),
