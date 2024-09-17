@@ -1,10 +1,10 @@
-
 #if("dplyr" %in% (.packages())){
 #  detach("package:dplyr", unload=TRUE) 
 #  detach("package:plyr", unload=TRUE) 
 #} 
 #library(plyr)
 library(dplyr)
+
 
 ########################################################################################
 data_assigned_NE_16 = read.csv("../data_clade_assigned/NE_clade_assigned_season_2016.csv")
@@ -313,4 +313,95 @@ ggplot(freq_16_by_AG) +
 
 
 #ggsave("../fig/frequency_by_agegroup_16.png", height=6, width=4)
+
+### ======== MV: plot with frequency over time at a finer resolution ===========
+
+library(ggplot2)
+library(cowplot)
+theme_set(theme_cowplot())
+
+clade_colors <- tibble(clade = c("other", "3C.3a", "3C.2a", "3C.2a1-1", "3C.2a1-2","3C.2a1-3",
+                                 "3C.2a2-1", "3C.2a2-2", "3C.2a3"),
+                       color = c("grey85","#F8766D", "#CD9600",
+                                 "#7CAE00", "#00BE67", "#00BFC4", 
+                                 "#6666FF", "#C77CFF", "#FF61CC"))
+
+north_america_monthly_freqs <- bind_rows(data_assigned_NA_16,
+          data_assigned_NA_17) %>%
+  as_tibble() %>%
+  mutate(year = lubridate::year(collection),
+         month = lubridate::month(collection),
+         # Reference date for each year/month (for plotting)
+         year_month_ref_date = lubridate::ymd(paste(year, month, 1, sep = '-'))) %>%
+  group_by(year, month, year_month_ref_date, clade) %>%
+  count() %>%
+  group_by(year, month) %>%
+  mutate(clade_freq = n/sum(n)) %>%
+  ungroup() 
+
+north_america_monthly_freqs <- north_america_monthly_freqs %>%
+  mutate(
+    clade = case_match(clade,
+                       "A1" ~ "3C.2a1-1",
+                       "A1_2" ~ "3C.2a1-2",
+                       "A1_3" ~ "3C.2a1-3",
+                       "A2" ~ "3C.2a2-1",
+                       "A2_2" ~ "3C.2a2-2",
+                       "A3" ~ "3C.2a3",
+                       "c2a" ~ "3C.2a",
+                       "c3a" ~ "3C.3a",
+                       "other" ~ "other")
+  )%>%
+  mutate(clade = factor(clade, levels = clade_colors$clade))
+
+
+# Quick test, frequencies should sum to 1
+stopifnot(
+  all(north_america_monthly_freqs %>% group_by(month, year) %>%
+        summarise(S = sum(clade_freq)) %>%
+        pull(S) %>% unique() %>%
+        round(10) == 1)
+)
+
+north_america_monthly_freqs %>%
+  # Using discrete instead of date x axis to make spacing between columns even
+  ggplot(aes(x = as.character(year_month_ref_date), y = clade_freq)) +
+  scale_fill_manual(values = clade_colors$color) +
+  geom_col(aes(fill = clade),
+           width = 0.95, just = 0) +
+  scale_x_discrete(breaks = lubridate::ymd(
+                          c("2016-11-01",
+                            paste("2017", seq(1,11,2), "01", sep = '-'),
+                            paste("2018", seq(1,9,2), "01", sep = '-'))) %>%
+                     as.character(),
+               labels = function(x){
+                 
+                 case_when(
+                   lubridate::month(x) == 1 & lubridate::day(x) == 1 ~
+                     paste0(lubridate::month(x, label = T, abbr = T),"\n",lubridate::year(x)),
+                   T ~ lubridate::month(x, label = T, abbr = T)
+                 )
+
+               }) +
+  # Hacky way to draw a line between Sep and Oct 2017 given discrete scale of x axis
+  geom_col(data = tibble(year_month_ref_date = "2017-10-01",
+                         clade_freq = 1.1),
+           color = 'black', width = 0.05, just = 0, linetype = 1, linewidth = 1.1) +
+  geom_text(data = tibble(
+    year_month_ref_date = c("2017-04-01", "2018-04-01"),
+    clade_freq = 1.1,
+    label = c("2016-2017 season", "2017-2018 season")),
+    aes(label = label)) +
+  theme(legend.position = "right",
+        axis.text = element_text(lineheight = 1.1)) +
+  scale_y_continuous(breaks = seq(0,1,0.25)) +
+  xlab("") +
+  ylab("Frequency")
+
+
+
+
+
+
+
 
