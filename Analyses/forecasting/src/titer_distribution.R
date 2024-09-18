@@ -15,12 +15,15 @@ lb = 2^(sq) * 10
 ##################################################################################
 source("../../../Data/script/load_data/load_data.R")
 
-#df = transform(df, Age_group = cut(Age, breaks = ag_brk))
+df = transform(df, Age_group = cut(Age, breaks = ag_brk))
 
 levels(df$Test_virus) = c("3C.3A", "3C.2A", "3C.2A1-1", "3C.2A1-2", "3C.2A1-3",
                           "3C.2A2-1", "3C.2A2-2", "3C.2A3")
+
+# MV: careful, this has to stay in this order unless you properly refactor. 
+# The actual values don't have these labels
 levels(df$Age_group) = c("1-4 years", "5-17 years", "18-44 years",
-                         "45-64 years", "65-90 years") %>% rev()
+                         "45-64 years", "65-90 years")
 
 # KC's original plot
 # ggplot(df, aes(x=Titer, y=Age_group, height=stat(density), fill=Test_virus)) +
@@ -92,9 +95,13 @@ source("../../../Data/script/load_data/load_na.R")
 
 #df$Test_virus = ifelse(df$Test_virus == "A2", "3C.2A2-2 (NA)", "3C.2A (NA)")
 
+
 levels(df_na$Test_virus) = c("3C.2A (NA)", "3C.2A2-2 (NA)")
+
+# MV: careful, this has to stay in this order unless you properly refactor. 
+# The actual values don't have these labels
 levels(df_na$Age_group) = c("1-4 years", "5-17 years", "18-44 years",
-                         "45-64 years", "65-90 years") %>% rev()
+                         "45-64 years", "65-90 years") 
 
 
 # ggplot(df_na, aes(x=Titer, y=Age_group, height=stat(density), fill=Test_virus)) +
