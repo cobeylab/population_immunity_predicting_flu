@@ -47,7 +47,10 @@ plot_distribution <- function(data){
     mutate(Test_virus = str_replace(Test_virus, 'A','a')) %>%
     group_by(Age_group, Test_virus, Titer) %>% 
     count() %>%
-    ggplot(aes(x = Titer, y = n, fill = Test_virus)) +
+    group_by(Age_group, Test_virus) %>%
+    mutate(freq = n/sum(n)) %>%
+    ungroup() %>%
+    ggplot(aes(x = Titer, y = freq, fill = Test_virus)) +
     geom_col() +
     facet_grid(Age_group ~ Test_virus) +
     scale_x_continuous(labels = ~(2^(.x))*10,
@@ -55,7 +58,7 @@ plot_distribution <- function(data){
     theme(legend.position = 'none',
           axis.text.x = element_text(angle = -90, size = 7, vjust = 0.5),
           panel.border = element_rect(color = 'gray80')) +
-    ylab('Number of samples')
+    ylab('Fraction of samples')
 }
 
 
