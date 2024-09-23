@@ -6,6 +6,7 @@
 #library(plyr)
 library(dplyr)
 library(cowplot)
+library(ggplot2)
 theme_set(theme_cowplot())
 
 ########################################################################################
@@ -55,7 +56,7 @@ density_histogram_1718_all_regions <- combined_data %>%
   scale_y_continuous(name = 'Number of GISAID isolates',
                      labels = function(x){x/0.0001},
                      sec.axis = sec_axis(~ ., name = 'Density')) +
-  geom_density(aes(color = A2), linewidth = 1.5)  + 
+  geom_density(aes(color = A2), linewidth = 1.5, adjust = 1/2)  + 
   theme(legend.position = c(0.35,0.95),
         axis.title = element_text(size = 11),
         axis.text = element_text(size = 11),
@@ -79,7 +80,7 @@ density_histogram_1718_all_regions <- combined_data %>%
   scale_y_continuous(name = 'Number of GISAID isolates',
                      labels = function(x){x/0.0001},
                      sec.axis = sec_axis(~ ., name = 'Density')) +
-  geom_density(aes(color = A2), linewidth = 2)  + 
+  geom_density(aes(color = A2), linewidth = 2, adjust = 1/2)  + 
   facet_wrap("region", ncol = 1, scales = 'free_y') +
   theme(legend.position = 'top') +
   scale_fill_manual(name = '', values = c("#C77CFF","gray")) +
