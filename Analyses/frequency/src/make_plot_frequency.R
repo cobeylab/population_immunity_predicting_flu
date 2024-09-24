@@ -4,7 +4,7 @@
 #} 
 #library(plyr)
 library(dplyr)
-
+library(stringr)
 
 ########################################################################################
 data_assigned_NE_16 = read.csv("../data_clade_assigned/NE_clade_assigned_season_2016.csv")
@@ -15,6 +15,11 @@ data_assigned_US_17 = read.csv("../data_clade_assigned/US_clade_assigned_season_
 
 data_assigned_NA_16 = read.csv("../data_clade_assigned/NA_clade_assigned_season_2016.csv")
 data_assigned_NA_17 = read.csv("../data_clade_assigned/NA_clade_assigned_season_2017.csv")
+
+# MV: Later inclusion of data from 18-19 for North American (for frequency plot at finer timescale)
+data_assigned_NA_18 = read.csv("../data_clade_assigned/NA_clade_assigned_season_2018.csv")
+
+
 
 make_frequency_table = function(data_assigned){
   data_assigned = data_assigned[data_assigned$clade != "other", ]
@@ -327,8 +332,12 @@ clade_colors <- tibble(clade = c("other", "3C.3a", "3C.2a", "3C.2a1-1", "3C.2a1-
                                  "#6666FF", "#C77CFF", "#FF61CC"))
 
 north_america_monthly_freqs <- bind_rows(data_assigned_NA_16,
-          data_assigned_NA_17) %>%
+                                         data_assigned_NA_17) %>%
+  mutate(id = as.character(id)) %>%
+  bind_rows(data_assigned_NA_18) %>%
   as_tibble() %>%
+  # Keep only correctly formatted dates
+  filter(str_count(collection, "-") == 2) %>%
   mutate(year = lubridate::year(collection),
          month = lubridate::month(collection),
          # Reference date for each year/month (for plotting)
@@ -372,7 +381,9 @@ north_america_monthly_freqs %>%
   scale_x_discrete(breaks = lubridate::ymd(
                           c("2016-11-01",
                             paste("2017", seq(1,11,2), "01", sep = '-'),
-                            paste("2018", seq(1,9,2), "01", sep = '-'))) %>%
+                            paste("2018", seq(1,11,2), "01", sep = '-'),
+                            paste("2019", seq(1,9,2), "01", sep = '-')
+                            )) %>%
                      as.character(),
                labels = function(x){
                  
@@ -384,13 +395,13 @@ north_america_monthly_freqs %>%
 
                }) +
   # Hacky way to draw a line between Sep and Oct 2017 given discrete scale of x axis
-  geom_col(data = tibble(year_month_ref_date = "2017-10-01",
+  geom_col(data = tibble(year_month_ref_date = c("2017-10-01","2018-10-01"),
                          clade_freq = 1.1),
            color = 'black', width = 0.05, just = 0, linetype = 1, linewidth = 1.1) +
   geom_text(data = tibble(
-    year_month_ref_date = c("2017-04-01", "2018-04-01"),
+    year_month_ref_date = c("2017-04-01", "2018-04-01", "2019-04-01"),
     clade_freq = 1.1,
-    label = c("2016-2017 season", "2017-2018 season")),
+    label = c("2016-2017 season", "2017-2018 season", "2018-2019 season")),
     aes(label = label)) +
   theme(legend.position = "right",
         axis.text = element_text(lineheight = 1.1)) +
