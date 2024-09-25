@@ -372,10 +372,10 @@ stopifnot(
         round(10) == 1)
 )
 
-north_america_monthly_freqs %>%
+extended_freq_plot <- north_america_monthly_freqs %>%
   # Using discrete instead of date x axis to make spacing between columns even
   ggplot(aes(x = as.character(year_month_ref_date), y = clade_freq)) +
-  scale_fill_manual(values = clade_colors$color) +
+  scale_fill_manual(values = clade_colors$color, name = 'Clade') +
   geom_col(aes(fill = clade),
            width = 0.95, just = 0) +
   scale_x_discrete(breaks = lubridate::ymd(
@@ -402,13 +402,15 @@ north_america_monthly_freqs %>%
     year_month_ref_date = c("2017-04-01", "2018-04-01", "2019-04-01"),
     clade_freq = 1.1,
     label = c("2016-2017 season", "2017-2018 season", "2018-2019 season")),
-    aes(label = label)) +
+    aes(label = label), 
+    size = 2.5) +
   theme(legend.position = "right",
         axis.text = element_text(lineheight = 1.1)) +
   scale_y_continuous(breaks = seq(0,1,0.25)) +
   xlab("") +
   ylab("Frequency")
 
+save(extended_freq_plot, file =  "../result/extended_freq_plot.RData")
 
 
 
