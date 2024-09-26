@@ -403,7 +403,7 @@ extended_freq_plot <- north_america_monthly_freqs %>%
     clade_freq = 1.1,
     label = c("2016-2017 season", "2017-2018 season", "2018-2019 season")),
     aes(label = label), 
-    size = 2.5) +
+    size = 3) +
   theme(legend.position = "right",
         axis.text = element_text(lineheight = 1.1)) +
   scale_y_continuous(breaks = seq(0,1,0.25)) +
@@ -411,6 +411,12 @@ extended_freq_plot <- north_america_monthly_freqs %>%
   ylab("Frequency")
 
 save(extended_freq_plot, file =  "../result/extended_freq_plot.RData")
+save_plot("../fig/extended_freq_plot.pdf", extended_freq_plot +
+            theme(legend.position = "None") +
+            theme(axis.text.x = element_text(size = 10),
+                  axis.text.y = element_text(size =10),
+                  axis.title = element_text(size =10)),
+          base_height = 2.5, base_width = 7)
 
 
 
