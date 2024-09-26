@@ -67,8 +67,8 @@ titer_theme = theme_bw() + theme(
 
 if(opt_na==0){
   
-  susc_x_label = c("3C.3A", "3C.2A", "3C.2A1-1", "3C.2A1-2", "3C.2A1-3",
-                   "3C.2A2-1", "3C.2A2-2", "3C.2A3")
+  susc_x_label = c("3C.3a", "3C.2a", "3C.2a1-1", "3C.2a1-2", "3C.2a1-3",
+                   "3C.2a2-1", "3C.2a2-2", "3C.2a3")
   
   susc_color_manual =  scale_color_manual(values = c("#FED976", "#FEB24C", 
                                                      "#FC4E2A", "#E31A1C", "#B10026",
@@ -79,7 +79,7 @@ if(opt_na==0){
   
 }else if (opt_na==1) {
   
-  susc_x_label = c("3C.2A (NA)", "3C.2A2-2 (NA)")
+  susc_x_label = c("3C.2a (NA)", "3C.2a2-2 (NA)")
   
   susc_color_manual = scale_color_manual(values = c("#FED976", "#FEB24C"),
                      limits= c(1,2),
@@ -193,7 +193,7 @@ if(opt_na == 0) {
   source("../../../Data/script/load_data/load_na.R")
 
   df = df_na
-  df$Test_virus = ifelse(df$Test_virus == "A2", "3C.2A2-2 (NA)", "3C.2A (NA)")
+  df$Test_virus = ifelse(df$Test_virus == "A2", "3C.2a2-2 (NA)", "3C.2a (NA)")
 
   p_obs_titer = ggplot(df) +
     geom_jitter(aes(x=Age, y=Titer, col=Test_virus), alpha=0.1, height=0.1) +
@@ -310,9 +310,9 @@ if (main == 1) {
              labels = "A"
   )
   
-  ggsave(paste0("../fig/rank_susceptibility_", out, "_threshold", threshold, ".png"), height=4.6, width=5.2)
-  ggsave(paste0("../fig/rank_susceptibility_", out, "_threshold", threshold, ".tiff"), height=4.6, width=5.2)
-  ggsave(paste0("../fig/rank_susceptibility_", out, "_threshold", threshold, ".pdf"), height=4.6, width=5.2)
+  ggsave(paste0("../fig/rank_susceptibility_", out, "_threshold", threshold, ".png"), height=4.6, width=5.3)
+  ggsave(paste0("../fig/rank_susceptibility_", out, "_threshold", threshold, ".tiff"), height=4.6, width=5.3)
+  ggsave(paste0("../fig/rank_susceptibility_", out, "_threshold", threshold, ".pdf"), height=4.6, width=5.3)
   
 }else {
   
