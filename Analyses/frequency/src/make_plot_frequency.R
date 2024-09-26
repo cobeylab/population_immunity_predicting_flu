@@ -77,8 +77,8 @@ write.csv(tb, "../result/clade_frequencies.csv", row.names = F)
 # plot frequency and population susceptibility
 
 library(ggplot2)
-susc_x_label = c("3C.3A", "3C.2A", "3C.2A1-1", "3C.2A1-2", "3C.2A1-3",
-                 "3C.2A2-1", "3C.2A2-2", "3C.2A3")
+susc_x_label = c("3C.3a", "3C.2a", "3C.2a1-1", "3C.2a1-2", "3C.2a1-3",
+                 "3C.2a2-1", "3C.2a2-2", "3C.2a3")
 
 p_freq = ggplot(tb, aes(x=clade, y=freq, fill=clade, linetype = factor(region))) +
   geom_bar(color="black", width = 0.7, position=position_dodge(width=0.9), stat="identity") +
