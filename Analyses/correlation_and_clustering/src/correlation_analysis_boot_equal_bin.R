@@ -61,8 +61,8 @@ ag_cormat$label = factor(ag_cormat$label, levels = c("1-15 years", "16-30 years"
 #########################################################################################
 
 
-plot_label = c("3C.3A", "3C.2A", "3C.2A3","3C.2A1-1", "3C.2A1-2", "3C.2A1-3",
-               "3C.2A2-1", "3C.2A2-2")
+plot_label = c("3C.3a", "3C.2a", "3C.2a3","3C.2a1-1", "3C.2a1-2", "3C.2a1-3",
+               "3C.2a2-1", "3C.2a2-2")
 
 
 theme_cor_equ =   theme_bw() + theme(axis.text.x = element_text(angle=290, vjust=0.75, hjust=0),
