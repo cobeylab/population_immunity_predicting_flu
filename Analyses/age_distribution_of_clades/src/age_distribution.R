@@ -26,7 +26,7 @@ process_data = function(data_assigned){
   data_assigned = data_assigned[ !is.na(data_assigned$age),]
   data_assigned = data_assigned[ data_assigned$age <= 90, ]
   data_assigned$age = ifelse(data_assigned$age == 0, 1, data_assigned$age)
-  data_assigned$A2 = ifelse(data_assigned$clade == "A2_2", "3C.2A2", "Not 3C.2A2")
+  data_assigned$A2 = ifelse(data_assigned$clade == "A2_2", "3C.2a2", "Not 3C.2a2")
   return (data_assigned)
 }
 
@@ -52,7 +52,7 @@ density_histogram_1718_all_regions <- combined_data %>%
   filter(region == 'United States') %>%
   ggplot(aes(x = age)) +
   geom_histogram(aes(y = ..count.. * 0.0001, fill = A2), alpha = 0.8, 
-                 color = 'black', binwidth = binw) +
+                 color = 'black', binwidth = binw, position="identity") +
   scale_y_continuous(name = 'Number of GISAID isolates',
                      labels = function(x){x/0.0001},
                      sec.axis = sec_axis(~ ., name = 'Density')) +
@@ -76,7 +76,7 @@ save_plot("../figure/density_histogram_1718_US.pdf",
 density_histogram_1718_all_regions <- combined_data %>% 
   ggplot(aes(x = age)) +
   geom_histogram(aes(y = ..count.. * 0.0001, fill = A2), alpha = 0.8, 
-                 color = 'black', binwidth = binw) +
+                 color = 'black', binwidth = binw, position="identity") +
   scale_y_continuous(name = 'Number of GISAID isolates',
                      labels = function(x){x/0.0001},
                      sec.axis = sec_axis(~ ., name = 'Density')) +
